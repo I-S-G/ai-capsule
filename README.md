@@ -84,6 +84,8 @@ This application uses PostgreSQL hosted by Neon.
 npx prisma migrate dev
 ```
 
+## API Routes
+
 | Method | Route                       | Authentication |
 | ------ | --------------------------- | -------------- |
 | GET    | `/api/health`               | Public         |
@@ -94,3 +96,70 @@ npx prisma migrate dev
 | GET    | `/api/auth/github`          | Public         |
 | GET    | `/api/auth/github/callback` | Public         |
 | POST   | `/api/auth/logout`          | JWT            |
+
+## Authentication
+This application uses Github OAuth provider for authentication. The authentication flow is as follows:
+1. User clicks on login with github button
+2. Express starts GitHub OAuth
+3. GitHub redirects to the express callback
+4. Express creates an application JWT
+5. JWT is stored in a secure, HttpOnly cookie called token
+6. Protected API routes verify the JWT
+7. The authenticated user's ID is used for capsule ownership
+
+## Database & Ownership
+
+PostgreSQL database is hosted on Neon and accessed through Prisma ORM. The data is stored persistently in Neon, so restarting/redeploying will not delete the data.
+
+The ownership of each capsule is determined by the userId of the authenticated user. When a capsule is created, it also stores the userId of the authenticated user which is used to check if the authenticated user owns the capsule or not.
+
+## cURL Checks
+
+Two cURL checks were done against the deployed GET /api/capsules endpoint
+
+```bash
+curl -i https://ai-capsule-62hs.onrender.com/api/capsules
+```
+Result:
+HTTP/1.1 401 Unauthorized
+{"error":"Authentication required"}
+
+```bash
+curl -i -H "Cookie: token=fake-token-123" https://ai-capsule-62hs.onrender.com/api/capsules
+```
+
+Result:
+HTTP/1.1 401 Unauthorized
+{"error":"Invalid or expired token"}
+
+## Limitation
+
+Users can't directly upload screenshots. They can only store image url of an image already uploaded in the internet.
+
+## AI-Assisted Development
+
+ChatgGPT was used to assist in the development of this web application.
+
+One problem encountered and corrected in AI-generated code was importation and use of deprecated methods & types. The deprecated types and methods were researched on the documentations and replaced with newer alternative.
+
+### Verification of OAuth and JWT
+
+Github OAuth was tested by:
+1. Confirming unauthenticated requests returned HTTP 401.
+2. Logging in using github authentication
+3. Confirming the dashboard was accessible
+4. Confirming that protected capsule requests worked 
+
+The application JWT is stored in an HttpOnly cookie rather than browser local storage. The JWT was not displayed or exposed in the application interface.
+It was tested by opening devtools console and running document.cookie. The result was an empty string.
+
+### Protected API Behaviour Verification
+
+Protected API behaviour was verified by testing the /api/capsules endpoint without valid authentication first then with a fake JWT.
+
+### CRUD Behaviour & User Data Ownership Verification
+CRUD behaviour was verified by creating, deleting and updating capsules manually in the app. Data Ownership was checked by logging in with multiple github accounts in different browsers and seeing if one user can get information on other user's capsule.
+
+### One Implementation Decision I made
+
+Using react-hook-forms and zod for form creation and validation. The AI by default chose traditional useState hook to create capsule form. However, I quickly realised that the component was performing multiple re-renders everytime the form's value changed as setState was getting triggered. To optimize this, I decided to use react-hook-forms. Since it is a common practice to use Zod validation with react-hook-forms which provides extra security with frontend validation which is always nice to have, I decided to use zod as well. 
