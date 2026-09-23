@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEventHandler } from "react";
 
 import type { CapsuleFormData } from "../../types";
 
@@ -62,9 +62,7 @@ function CapsuleForm({
     }));
   }
 
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
-  ): Promise<void> {
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
 
     setError("");
@@ -79,7 +77,7 @@ function CapsuleForm({
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const inputClass =
     "mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
@@ -257,7 +255,11 @@ function CapsuleForm({
           </Button>
         )}
 
-        <Button type="submit" disabled={loading} className=" cursor-pointer p-4">
+        <Button
+          type="submit"
+          disabled={loading}
+          className=" cursor-pointer p-4"
+        >
           {loading ? "Saving..." : editing ? "Update Capsule" : "Save Capsule"}
         </Button>
       </div>
